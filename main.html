@@ -30,6 +30,12 @@
       text-align: center;
       padding: 4px;
       font-size: 12px;
+      cursor: pointer;
+      border: none;
+    }
+    .key:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     .yellow { background: #FFD700; color: black; }
     .green  { background: #228B22; color: white; }
@@ -39,74 +45,82 @@
 </head>
 <body>
   <div class="keyboard">
-    <div class="key yellow" style="grid-row:1; grid-column:1;">CLEAR</div>
-    <div class="key yellow" style="grid-row:1; grid-column:2;">BACK<br>SPACE</div>
-    <div class="key yellow" style="grid-row:1; grid-column:3 / span 6;">SPACE</div>
-    <div class="key red"    style="grid-row:1; grid-column:9 / span 2;">ENTER</div>
+    <!-- Each button has data-clickable attribute -->
+    <button class="key yellow" data-clickable="true" style="grid-row:1; grid-column:1;">CLEAR</button>
+    <button class="key yellow" data-clickable="false" style="grid-row:1; grid-column:2;">BACK<br>SPACE</button>
+    <button class="key yellow" data-clickable="true" style="grid-row:1; grid-column:3 / span 6;">SPACE</button>
+    <button class="key red"    data-clickable="true" style="grid-row:1; grid-column:9 / span 2;">ENTER</button>
 
-    <div class="key green" style="grid-row:2; grid-column:1;">INIT<br>CNTL</div>
-    <div class="key green" style="grid-row:2; grid-column:2;">TRK<br>RPOS</div>
-    <div class="key green" style="grid-row:2; grid-column:3;">TRK<br>SUSP</div>
-    <div class="key green" style="grid-row:2; grid-column:4;">TERM<br>CNTL</div>
-    <div class="key green" style="grid-row:2; grid-column:5;">HND<br>OFF</div>
-    <div class="key green" style="grid-row:2; grid-column:6;">FLT<br>DATA</div>
-    <div class="key green" style="grid-row:2; grid-column:7;">MULTI<br>FUNC</div>
-    <div class="key green" style="grid-row:2; grid-column:8;">F8</div>
-    <div class="key yellow"style="grid-row:2; grid-column:9;">&#9651;</div>
-    <div class="key yellow"style="grid-row:2; grid-column:10;">&#9679;</div>
+    <button class="key green" data-clickable="true" style="grid-row:2; grid-column:1;">INIT<br>CNTL</button>
+    <button class="key green" data-clickable="true" style="grid-row:2; grid-column:2;">TRK<br>RPOS</button>
+    <button class="key green" data-clickable="false" style="grid-row:2; grid-column:3;">TRK<br>SUSP</button>
+    <button class="key green" data-clickable="true" style="grid-row:2; grid-column:4;">TERM<br>CNTL</button>
+    <button class="key green" data-clickable="false" style="grid-row:2; grid-column:5;">HND<br>OFF</button>
+    <button class="key green" data-clickable="true" style="grid-row:2; grid-column:6;">FLT<br>DATA</button>
+    <button class="key green" data-clickable="true" style="grid-row:2; grid-column:7;">MULTI<br>FUNC</button>
+    <button class="key green" data-clickable="true" style="grid-row:2; grid-column:8;">F8</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:2; grid-column:9;">&#9651;</button>
+    <button class="key yellow"data-clickable="false" style="grid-row:2; grid-column:10;">&#9679;</button>
 
-    <div class="key green" style="grid-row:3; grid-column:1;">F9</div>
-    <div class="key green" style="grid-row:3; grid-column:2;">F10</div>
-    <div class="key green" style="grid-row:3; grid-column:3;">CA</div>
-    <div class="key green" style="grid-row:3; grid-column:4;">F12</div>
-    <div class="key green" style="grid-row:3; grid-column:5;">F13</div>
-    <div class="key green" style="grid-row:3; grid-column:6;">F14</div>
-    <div class="key green" style="grid-row:3; grid-column:7;">TGT<br>GEN</div>
-    <div class="key green" style="grid-row:3; grid-column:8;">F16</div>
-    <div class="key yellow"style="grid-row:3; grid-column:9;">IFR<br>+</div>
-    <div class="key yellow"style="grid-row:3; grid-column:10;">VFR<br>/</div>
+    <button class="key green" data-clickable="true" style="grid-row:3; grid-column:1;">F9</button>
+    <button class="key green" data-clickable="true" style="grid-row:3; grid-column:2;">F10</button>
+    <button class="key green" data-clickable="true" style="grid-row:3; grid-column:3;">CA</button>
+    <button class="key green" data-clickable="false" style="grid-row:3; grid-column:4;">F12</button>
+    <button class="key green" data-clickable="true" style="grid-row:3; grid-column:5;">F13</button>
+    <button class="key green" data-clickable="true" style="grid-row:3; grid-column:6;">F14</button>
+    <button class="key green" data-clickable="true" style="grid-row:3; grid-column:7;">TGT<br>GEN</button>
+    <button class="key green" data-clickable="true" style="grid-row:3; grid-column:8;">F16</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:3; grid-column:9;">IFR<br>+</button>
+    <button class="key yellow"data-clickable="false" style="grid-row:3; grid-column:10;">VFR<br>/</button>
 
-    <div class="key yellow"style="grid-row:4; grid-column:1;">A</div>
-    <div class="key yellow"style="grid-row:4; grid-column:2;">BCN<br>B</div>
-    <div class="key yellow"style="grid-row:4; grid-column:3;">CFG<br>C</div>
-    <div class="key yellow"style="grid-row:4; grid-column:4;">DIS<br>D</div>
-    <div class="key yellow"style="grid-row:4; grid-column:5;">EMG<br>E</div>
-    <div class="key yellow"style="grid-row:4; grid-column:6;">FIL<br>F</div>
-    <div class="key yellow"style="grid-row:4; grid-column:7;">G</div>
-    <div class="key blue"  style="grid-row:4; grid-column:8;">&#8598;<br>1</div>
-    <div class="key blue"  style="grid-row:4; grid-column:9;">2</div>
-    <div class="key blue"  style="grid-row:4; grid-column:10;">&#8599;<br>3</div>
+    <button class="key yellow"data-clickable="true" style="grid-row:4; grid-column:1;">A</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:4; grid-column:2;">BCN<br>B</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:4; grid-column:3;">CFG<br>C</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:4; grid-column:4;">DIS<br>D</button>
+    <button class="key yellow"data-clickable="false" style="grid-row:4; grid-column:5;">EMG<br>E</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:4; grid-column:6;">FIL<br>F</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:4; grid-column:7;">G</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:4; grid-column:8;">&#8598;<br>1</button>
+    <button class="key blue"  data-clickable="false" style="grid-row:4; grid-column:9;">2</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:4; grid-column:10;">&#8599;<br>3</button>
 
-    <div class="key yellow"style="grid-row:5; grid-column:1;">H</div>
-    <div class="key yellow"style="grid-row:5; grid-column:2;">I</div>
-    <div class="key yellow"style="grid-row:5; grid-column:3;">K</div>
-    <div class="key yellow"style="grid-row:5; grid-column:4;">J</div>
-    <div class="key yellow"style="grid-row:5; grid-column:5;">LDR<br>L</div>
-    <div class="key yellow"style="grid-row:5; grid-column:6;">MOD<br>M</div>
-    <div class="key yellow"style="grid-row:5; grid-column:7;">N</div>
-    <div class="key blue"  style="grid-row:5; grid-column:8;">&#8592;<br>4</div>
-    <div class="key blue"  style="grid-row:5; grid-column:9;">5</div>
-    <div class="key blue"  style="grid-row:5; grid-column:10;">&#8594;<br>6</div>
+    <button class="key yellow"data-clickable="true" style="grid-row:5; grid-column:1;">H</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:5; grid-column:2;">I</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:5; grid-column:3;">K</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:5; grid-column:4;">J</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:5; grid-column:5;">LDR<br>L</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:5; grid-column:6;">MOD<br>M</button>
+    <button class="key yellow"data-clickable="false" style="grid-row:5; grid-column:7;">N</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:5; grid-column:8;">&#8592;<br>4</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:5; grid-column:9;">5</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:5; grid-column:10;">&#8594;<br>6</button>
 
-    <div class="key yellow"style="grid-row:6; grid-column:1;">OFF<br>O</div>
-    <div class="key yellow"style="grid-row:6; grid-column:2;">PRE<br>P</div>
-    <div class="key yellow"style="grid-row:6; grid-column:3;">Q</div>
-    <div class="key yellow"style="grid-row:6; grid-column:4;">R</div>
-    <div class="key yellow"style="grid-row:6; grid-column:5;">SYS<br>S</div>
-    <div class="key yellow"style="grid-row:6; grid-column:6;">TAB<br>T</div>
-    <div class="key yellow"style="grid-row:6; grid-column:7;">U</div>
-    <div class="key blue"  style="grid-row:6; grid-column:8;">&#8601;<br>7</div>
-    <div class="key blue"  style="grid-row:6; grid-column:9;">&#8595;<br>8</div>
-    <div class="key blue"  style="grid-row:6; grid-column:10;">&#8600;<br>9</div>
+    <button class="key yellow"data-clickable="true" style="grid-row:6; grid-column:1;">OFF<br>O</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:6; grid-column:2;">PRE<br>P</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:6; grid-column:3;">Q</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:6; grid-column:4;">R</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:6; grid-column:5;">SYS<br>S</button>
+    <button class="key yellow"data-clickable="false" style="grid-row:6; grid-column:6;">TAB<br>T</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:6; grid-column:7;">U</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:6; grid-column:8;">&#8601;<br>7</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:6; grid-column:9;">&#8595;<br>8</button>
+    <button class="key blue"  data-clickable="false" style="grid-row:6; grid-column:10;">&#8600;<br>9</button>
 
-    <div class="key yellow"style="grid-row:7; grid-column:1;">V</div>
-    <div class="key yellow"style="grid-row:7; grid-column:2;">W</div>
-    <div class="key yellow"style="grid-row:7; grid-column:3;">X</div>
-    <div class="key yellow"style="grid-row:7; grid-column:4;">Y</div>
-    <div class="key yellow"style="grid-row:7; grid-column:5;">Z</div>
-    <div class="key yellow"style="grid-row:7; grid-column:6;">*</div>
-    <div class="key yellow"style="grid-row:7; grid-column:7;">MIN</div>
-    <div class="key blue"  style="grid-row:7; grid-column:8 / span 3;">0</div>
+    <button class="key yellow"data-clickable="true" style="grid-row:7; grid-column:1;">V</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:7; grid-column:2;">W</button>
+    <button class="key yellow"data-clickable="false" style="grid-row:7; grid-column:3;">X</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:7; grid-column:4;">Y</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:7; grid-column:5;">Z</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:7; grid-column:6;">*</button>
+    <button class="key yellow"data-clickable="true" style="grid-row:7; grid-column:7;">MIN</button>
+    <button class="key blue"  data-clickable="true" style="grid-row:7; grid-column:8 / span 3;">0</button>
   </div>
+  <script>
+    document.querySelectorAll('.key').forEach(btn => {
+      if (btn.getAttribute('data-clickable') !== 'true') {
+        btn.disabled = true;
+      }
+    });
+  </script>
 </body>
 </html>
