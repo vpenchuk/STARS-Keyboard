@@ -49,8 +49,6 @@
             white-space: pre-wrap;
         }
 
-
-
         /* Keyboard: fills remaining height and defines a fixed row grid */
         .keyboard {
             flex: 1 1 0;
@@ -63,7 +61,6 @@
             border-radius: 0;
             background: none;
         }
-
 
         /* Key buttons */
         .key {
@@ -95,6 +92,17 @@
             cursor: not-allowed;
             border: 1px dashed rgba(0, 0, 0, 0.3);
         }
+
+        .no-emoji {
+            font-family: monospace !important;
+            font-weight: lighter;
+            font-variant-ligatures: none;
+            -webkit-font-feature-settings: "liga" 0;
+            font-feature-settings: "liga" 0;
+            font-size: 1.5em;
+            line-height: 1;
+        }
+
 
         .yellow {
             background: #FFD700;
@@ -168,9 +176,9 @@
         <button class="key yellow" data-key="E" data-clickable>EMG<br>E</button>
         <button class="key yellow" data-key="F" data-clickable>FIL<br>F</button>
         <button class="key yellow" data-key="G" data-clickable>G</button>
-        <button class="key blue" data-key="1" data-clickable>&#8598; 1</button>
-        <button class="key blue" data-key="2" data-clickable>2</button>
-        <button class="key blue" data-key="3" data-clickable>&#8599; 3</button>
+        <button class="key blue" data-key="1" data-clickable><span class="no-emoji">&#8598;</span> 1</button>
+        <button class="key blue" data-key="2" data-clickable>&#8593; 2</button>
+        <button class="key blue" data-key="3" data-clickable><span class="no-emoji">&#8599;</span> 3</button>
         <!-- Row 5 -->
         <button class="key yellow" data-key="H" data-clickable>H</button>
         <button class="key yellow" data-key="I" data-clickable>I</button>
@@ -190,9 +198,9 @@
         <button class="key yellow" data-key="S" data-clickable>SYS<br>S</button>
         <button class="key yellow" data-key="T" data-clickable>TAB<br>T</button>
         <button class="key yellow" data-key="U" data-clickable>U</button>
-        <button class="key blue" data-key="7" data-clickable>&#8601; 7</button>
+        <button class="key blue" data-key="7" data-clickable><span class="no-emoji">&#8601;</span> 7</button>
         <button class="key blue" data-key="8" data-clickable>&#8595; 8</button>
-        <button class="key blue" data-key="9" data-clickable>&#8600; 9</button>
+        <button class="key blue" data-key="9" data-clickable><span class="no-emoji">&#8600;</span> 9</button>
         <!-- Row 7 -->
         <button class="key yellow" data-key="V" data-clickable>V</button>
         <button class="key yellow" data-key="W" data-clickable>W</button>
