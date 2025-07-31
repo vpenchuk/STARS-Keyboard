@@ -4,7 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <title>STARS Keyboard</title>
+    <title>STARS Keyboard Practice with Hint</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,7 +14,7 @@
 
         html,
         body {
-            height: calc(var(--vh, 1vh) * 100);
+            height: calc(var(--vh, 1vh)*100);
             width: 100vw;
             overflow: hidden;
             font-family: sans-serif;
@@ -23,13 +23,32 @@
             flex-direction: column;
         }
 
+        #practice-controls {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            padding: 8px;
+            background: #444;
+            color: #fff;
+            font-family: monospace;
+        }
 
-        /* Terminal: fixed 5-line height */
+        #practice-prompt {
+            font-size: 1.2em;
+            flex: 1;
+        }
+
+        #hint-text {
+            font-size: 1em;
+            color: #ff0;
+            min-width: 6em;
+        }
+
         .terminal {
             font-family: monospace;
             font-size: clamp(14px, 1.4vw, 20px);
             line-height: 1.2em;
-            height: calc(1.2em * 5 + 20px);
+            height: calc(1.2em*5 + 20px);
             background: #000;
             color: #0f0;
             padding: 10px;
@@ -40,29 +59,21 @@
         }
 
         .term-content {
-            height: calc(1.2em * 5);
+            height: calc(1.2em*5);
             line-height: 1.2em;
-            padding: 0;
-            margin: 0;
-            background: transparent;
             overflow-y: auto;
             white-space: pre-wrap;
         }
 
-        /* Keyboard: fills remaining height and defines a fixed row grid */
         .keyboard {
-            flex: 1 1 0;
+            flex: 1;
             display: grid;
             grid-template-columns: repeat(10, 1fr);
             grid-template-rows: repeat(7, 1fr);
             margin: clamp(4px, 1vw, 12px);
             gap: clamp(2px, 0.6vw, 6px);
-            padding: 0;
-            border-radius: 0;
-            background: none;
         }
 
-        /* Key buttons */
         .key {
             display: flex;
             align-items: center;
@@ -72,22 +83,18 @@
             border: none;
             border-radius: 5px;
             font-size: clamp(14px, 2vw, 24px);
-            padding: 0.3em;
-            min-width: 0;
-            min-height: 0;
+            padding: .3em;
             width: 100%;
             height: 100%;
-            overflow: hidden;
             cursor: pointer;
         }
 
         .key[data-key="*"] {
             font-size: clamp(24px, 4vw, 50px);
-            line-height: 1;
         }
 
         .key:disabled {
-            opacity: 0.3;
+            opacity: .3;
             filter: grayscale(100%) brightness(80%);
             cursor: not-allowed;
             border: 1px dashed rgba(0, 0, 0, 0.3);
@@ -95,33 +102,29 @@
 
         .no-emoji {
             font-family: monospace !important;
-            font-weight: lighter;
             font-variant-ligatures: none;
-            -webkit-font-feature-settings: "liga" 0;
             font-feature-settings: "liga" 0;
             font-size: 1.5em;
-            line-height: 1;
         }
-
 
         .yellow {
             background: #FFD700;
-            color: black;
+            color: #000
         }
 
         .green {
             background: #228B22;
-            color: white;
+            color: #fff
         }
 
         .red {
             background: #B22222;
-            color: white;
+            color: #fff
         }
 
         .blue {
             background: #1E90FF;
-            color: white;
+            color: #fff
         }
     </style>
     <script>
@@ -133,13 +136,21 @@
         window.addEventListener('orientationchange', setViewportHeight);
         setViewportHeight();
     </script>
-
 </head>
 
 <body>
+    <!-- PRACTICE CONTROLS -->
+    <div id="practice-controls">
+        <button id="btn-practice">Start Practice</button>
+        <div id="practice-prompt">Press “Start Practice” to begin</div>
+        <div id="hint-text"></div>
+    </div>
+
+    <!-- TERMINAL -->
     <div class="terminal">
         <div id="term-content" class="term-content"></div>
     </div>
+
     <div class="keyboard">
         <!-- Row 1 -->
         <button id="btn-clear" class="key yellow" data-clickable>CLEAR</button>
@@ -211,26 +222,236 @@
         <button class="key yellow" disabled>MIN</button>
         <button class="key blue" data-key="0" data-clickable style="grid-column:8/11">0</button>
     </div>
+
     <script>
+        // — PRACTICE DATA & LOGIC —
+        const practiceList = [
+            ['1YS', 'New Hampton, IA'],
+            ['21D', 'Lake Elmo (St Paul, MN)'],
+            ['25D', 'Forest Lake, MN'],
+            ['30MN', 'Albert Lea Helipad (Albert Lea, MN)'],
+            ['5D2', 'Northwoods, MN'],
+            ['99MN', 'St Mary\'s (Rochester, MN)'],
+            ['ACQ', 'Waseca, MN'],
+            ['AEL', 'Albert Lea, MN'],
+            ['ANE', 'Anoka County (Blaine, MN)'],
+            ['AUM', 'Austin, MN'],
+            ['CCY', 'Charles City, IA'],
+            ['CFE', 'Buffalo, MN'],
+            ['CHU', 'Houston County (Caledonia, MN)'],
+            ['CJJ', 'Cresco, IA'],
+            ['D02', 'Osage, IA'],
+            ['DEH', 'Decorah, IA'],
+            ['STP', 'St Paul, MN'],
+            ['SYN', 'Stanton, MN'],
+            ['FBL', 'Fariboult, MN'],
+            ['FCM', 'Flying CLoud (Eden Prairie, MN)'],
+            ['FGT', 'Farmington VORTAC (Farmington, MN)'],
+            ['FKA', 'Fillmore County (Preston, MN)'],
+            ['FOW', 'Halfway VOR/DME (Owatanna, MN)'],
+            ['GYL', 'Glenco, MN'],
+            ['JAY', 'Austin VOR/DME (Austin, MN)'],
+            ['LSE', 'La Crosse, WI'],
+            ['LVN', 'Airlake (Lakeville, MN)'],
+            ['MGG', 'Maple Lake (Maple Lake, MN)'],
+            ['MIC', 'Crystal (Minneapolis, MN)'],
+            ['MN34', 'St Olad Hospital Heliport'],
+            ['MSP', 'Minneapolis-St. Paul International'],
+            ['ODI', 'Nodine VORTAC (Nodine, MN)'],
+            ['OEO', 'Osceola, WI'],
+            ['ONA', 'Winona, MN'],
+            ['OWA', 'Owatonna, MN'],
+            ['RGK', 'Red Wing, MN'],
+            ['RNH', 'New Richmond, MN'],
+            ['SGS', 'South St. Paul (St. Paul, MN)'],
+            ['TOB', 'Sodge Center, MN'],
+            ['UKN', 'Waukon, IA'],
+            ['ABR', 'Aberdeen, SD'],
+            ['ALO', 'Waterloo, IA'],
+            ['AMW', 'Ames, IA'],
+            ['ARB', 'Ann Arbor, MI'],
+            ['ARR', 'Aurora, IL'],
+            ['ASX', 'Ashland, WI'],
+            ['ATW', 'Appleton, WI'],
+            ['ATY', 'Watertown, SD'],
+            ['AUW', 'Wausau, WI'],
+            ['AXN', 'Alexandria, MN'],
+            ['AZO', 'Kalamazoo, MI'],
+            ['BAE', 'Badger VORTAC (Milwaukee, WI)'],
+            ['BDE', 'Baudette, MN'],
+            ['BDF', 'Bradford VORTAC (Bradford, IL)'],
+            ['BDH', 'Willmar, MN'],
+            ['BIS', 'Bismarck, ND'],
+            ['BJI', 'Bemidji, MN'],
+            ['BKX', 'Brookings, SD'],
+            ['BMI', 'Bloomington, IL'],
+            ['BRD', 'Brainerd, MN'],
+            ['BRL', 'Burlington, IA'],
+            ['BTL', 'Battle Creek, MI'],
+            ['CID', 'Cedar Rapids, IA'],
+            ['CKC', 'Grand Marais, MN'],
+            ['CMI', 'Champaign, IL'],
+            ['CVA', 'Davenport VORTAC (Davenport, IA)'],
+            ['CWA', 'Central Wisconsin (Mosinee, WI)'],
+            ['DBQ', 'Dubuque, IA'],
+            ['DIK', 'Dickinson, ND'],
+            ['DLH', 'Duluth, MN'],
+            ['DLL', 'Wisconsin Dells (Baraboo, WI)'],
+            ['DPA', 'DuPage, IL'],
+            ['DPR', 'Dupree VORTAC (Dupree, SD)'],
+            ['DSM', 'Des Moines, IA'],
+            ['DTW', 'Detroit Metropolitan Wayne Co Airport'],
+            ['DVL', 'Devils Lake, ND'],
+            ['DVN', 'Davenport, IA'],
+            ['DWN', 'Darwin VORTAC (Darwin, MN)'],
+            ['EAU', 'Eau Claire, WI'],
+            ['ELO', 'Ely, MN'],
+            ['ENW', 'Kenosha, WI'],
+            ['FAR', 'Fargo, ND'],
+            ['FLD', 'Fond Du Lac, WI'],
+            ['FNT', 'Flint, MI'],
+            ['FOD', 'Fort Dodge, IA'],
+            ['FRM', 'Fairmont, MN'],
+            ['FSD', 'Sioux Falls, SD'],
+            ['FWA', 'Fort Wayne, IN'],
+            ['GEP', 'Gopher VORTAC (Minneapolis, MN)'],
+            ['GFK', 'Grand Forks, ND'],
+            ['GPZ', 'Grand Rapids, MN'],
+            ['GRB', 'Green Bay, WI'],
+            ['GRR', 'Grand Rapids, MI'],
+            ['GYY', 'Gary, IN'],
+            ['HIB', 'Hibbing, MN'],
+            ['HML', 'Humbolt VORTAC (Humboldt, MN)'],
+            ['HON', 'Huron, SD'],
+            ['HYR', 'Hayward, WI'],
+            ['IKV', 'Ankeny, IA'],
+            ['IMT', 'Iron Mountain, MI'],
+            ['INL', 'International Falls, MN'],
+            ['IND', 'Indianapolis, IN'],
+            ['IOW', 'Iowa City, IA'],
+            ['IRK', 'Kirksville, MO'],
+            ['ISN', 'Williston, ND'],
+            ['ISW', 'Wisconsin Rapids, WI'],
+            ['IWD', 'Ironwood, MI'],
+            ['JMS', 'Jamestown, ND'],
+            ['JOT', 'Joliet, IL'],
+            ['JVL', 'Janesville, WI'],
+            ['LAN', 'Lansing, MI'],
+            ['LBF', 'North Platte, NE'],
+            ['LMN', 'Lamoni VORTAC (Lamoni, IA)'],
+            ['LNK', 'Lincoln, NE'],
+            ['LNR', 'Lone Rock, WI'],
+            ['MCK', 'McCook, NE'],
+            ['MCW', 'Mason City, IA'],
+            ['MDW', 'Chicago Midway'],
+            ['MKE', 'Milwaukee, WI'],
+            ['MKG', 'Muskegon, MI'],
+            ['MKT', 'Mankato, MN'],
+            ['MLI', 'Moline, IA'],
+            ['MML', 'Marshall, MN'],
+            ['MOT', 'Minot, ND'],
+            ['MSN', 'Madison, WI'],
+            ['MZV', 'Moline VORTAC (Moline, IA)'],
+            ['OBK', 'Northbrook VOR/DME (Northbrook, IL)'],
+            ['OFK', 'Norfolk, NE'],
+            ['OMA', 'Omaha, NE'],
+            ['ONL', 'O\'Neil, NE'],
+            ['ORD', 'Chicago O’Hare International'],
+            ['OSH', 'Oshkosh, WI'],
+            ['OTG', 'Worthington, MN'],
+            ['OTM', 'Ottumwa, IA'],
+            ['OVR', 'Omaha VORTAC (Mineola, IA)'],
+            ['PDC', 'Prairie Du Chien, WI'],
+            ['PIA', 'Peoria, IL'],
+            ['PIR', 'Pierre, SD'],
+            ['PKD', 'Park Rapids, MN'],
+            ['PMM', 'Pullman VORTAC (Pullman, MI)'],
+            ['PTK', 'Pontiac, MI'],
+            ['PWK', 'Chicago Executive (Wheeling, IL)'],
+            ['RAC', 'Racine, WI'],
+            ['RAP', 'Rapid City, SD'],
+            ['RFD', 'Rockford, IL'],
+            ['RHI', 'Rhinelander, WI'],
+            ['RPD', 'Rice Lake, WI'],
+            ['RRT', 'Warroad, MN'],
+            ['RST', 'Rochester, MN'],
+            ['RWF', 'Redwood Falls, MN'],
+            ['RZN', 'Siren, WI'],
+            ['SAW', 'Sawyer (Marquette, MI)'],
+            ['SBN', 'South Bend, IN'],
+            ['SPI', 'Springfield, IL'],
+            ['SPW', 'Spencer, IA'],
+            ['STC', 'St. Cloud, MN'],
+            ['STJ', 'St. Joseph, MO'],
+            ['SUX', 'Sioux City, IA'],
+            ['TOL', 'Toledo, OH'],
+            ['TVC', 'Traverse City, MI'],
+            ['TVF', 'Thief River Falls, MN'],
+            ['UGN', 'Waukegan, IL'],
+            ['ULM', 'New Ulm, MN'],
+            ['YQT', 'Thunder Bay, ON'],
+            ['YWG', 'Winnipeg, MB'],
+        ];
+        let currentAnswer = '';
+        let startTime = 0;
+        let practiceStarted = false;
+        const practiceTimes = [];
+
+        const btnPractice = document.getElementById('btn-practice');
+        const promptEl = document.getElementById('practice-prompt');
+        const hintEl = document.getElementById('hint-text');
         const contentDiv = document.getElementById('term-content');
         let content = '';
+
+        function nextPractice() {
+            const [code, desc] = practiceList[
+                Math.floor(Math.random() * practiceList.length)
+            ];
+            currentAnswer = code;
+            promptEl.textContent = 'Type → ' + (Math.random() < 0.5 ? code : desc);
+            hintEl.textContent = '';
+            content = '';
+            contentDiv.textContent = '';
+            startTime = Date.now();
+        }
+
+        function checkPracticeAnswer() {
+            if (content.trim() === currentAnswer) {
+                const elapsed = Date.now() - startTime;
+                practiceTimes.push({ code: currentAnswer, timeMs: elapsed });
+                // → flash confirmation
+                promptEl.textContent = `✅ Correct! Time: ${elapsed} ms`;
+                hintEl.textContent = '';
+                setTimeout(nextPractice, 800);
+            }
+        }
+
+        btnPractice.addEventListener('click', () => {
+            if (!practiceStarted) {
+                practiceStarted = true;
+                btnPractice.textContent = 'Show Hint';
+                nextPractice();
+            } else {
+                hintEl.textContent = currentAnswer;
+            }
+        });
+
         document.querySelectorAll('.key').forEach(btn => {
-            const clickable = btn.hasAttribute('data-clickable');
-            btn.disabled = !clickable;
-            if (!clickable) return;
+            if (!btn.hasAttribute('data-clickable')) return;
             btn.addEventListener('click', () => {
                 if (btn.id === 'btn-clear') content = '';
                 else if (btn.id === 'btn-backspace') content = content.slice(0, -1);
                 else if (btn.id === 'btn-space') content += '\n';
                 else {
-                    const key = btn.getAttribute('data-key');
-                    if (key) content += key;
+                    const k = btn.getAttribute('data-key');
+                    if (k) content += k;
                 }
                 contentDiv.textContent = content;
                 contentDiv.scrollTop = contentDiv.scrollHeight;
-
+                setTimeout(checkPracticeAnswer, 0);
             });
         });
+        // — END PRACTICE LOGIC —
     </script>
 </body>
 
