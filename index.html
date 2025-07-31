@@ -4,7 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <title>STARS Keyboard</title>
+    <title>STARS Keyboard Practice with Toggleable Hints</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,7 +14,7 @@
 
         html,
         body {
-            height: calc(var(--vh, 1vh)*100);
+            height: calc(var(--vh, 1vh) * 100);
             width: 100vw;
             overflow: hidden;
             font-family: sans-serif;
@@ -23,6 +23,7 @@
             flex-direction: column;
         }
 
+        /* --- Practice controls with top margin --- */
         #practice-controls {
             display: flex;
             align-items: center;
@@ -31,6 +32,8 @@
             background: #444;
             color: #fff;
             font-family: monospace;
+            padding-top: 12px;
+            /* added margin */
         }
 
         #practice-prompt {
@@ -48,7 +51,7 @@
             font-family: monospace;
             font-size: clamp(14px, 1.4vw, 20px);
             line-height: 1.2em;
-            height: calc(1.2em*5 + 20px);
+            height: calc(1.2em * 5 + 20px);
             background: #000;
             color: #0f0;
             padding: 10px;
@@ -59,7 +62,7 @@
         }
 
         .term-content {
-            height: calc(1.2em*5);
+            height: calc(1.2em * 5);
             line-height: 1.2em;
             overflow-y: auto;
             white-space: pre-wrap;
@@ -109,22 +112,22 @@
 
         .yellow {
             background: #FFD700;
-            color: #000
+            color: #000;
         }
 
         .green {
             background: #228B22;
-            color: #fff
+            color: #fff;
         }
 
         .red {
             background: #B22222;
-            color: #fff
+            color: #fff;
         }
 
         .blue {
             background: #1E90FF;
-            color: #fff
+            color: #fff;
         }
     </style>
     <script>
@@ -151,6 +154,7 @@
         <div id="term-content" class="term-content"></div>
     </div>
 
+    <!-- KEYBOARD -->
     <div class="keyboard">
         <!-- Row 1 -->
         <button id="btn-clear" class="key yellow" data-clickable>CLEAR</button>
@@ -395,6 +399,7 @@
         let currentAnswer = '';
         let startTime = 0;
         let practiceStarted = false;
+        let showHints = false;
         const practiceTimes = [];
 
         const btnPractice = document.getElementById('btn-practice');
@@ -409,7 +414,8 @@
             ];
             currentAnswer = code;
             promptEl.textContent = 'Type → ' + (Math.random() < 0.5 ? code : desc);
-            hintEl.textContent = '';
+            // respect whether hints are on
+            hintEl.textContent = showHints ? currentAnswer : '';
             content = '';
             contentDiv.textContent = '';
             startTime = Date.now();
@@ -419,7 +425,6 @@
             if (content.trim() === currentAnswer) {
                 const elapsed = Date.now() - startTime;
                 practiceTimes.push({ code: currentAnswer, timeMs: elapsed });
-                // → flash confirmation
                 promptEl.textContent = `✅ Correct! Time: ${elapsed} ms`;
                 hintEl.textContent = '';
                 setTimeout(nextPractice, 800);
@@ -429,16 +434,20 @@
         btnPractice.addEventListener('click', () => {
             if (!practiceStarted) {
                 practiceStarted = true;
-                btnPractice.textContent = 'Show Hint';
+                showHints = false;
+                btnPractice.textContent = 'Show Hints';
                 nextPractice();
             } else {
-                hintEl.textContent = currentAnswer;
+                // toggle hints on/off
+                showHints = !showHints;
+                btnPractice.textContent = showHints ? 'Hide Hints' : 'Show Hints';
+                hintEl.textContent = showHints ? currentAnswer : '';
             }
         });
 
+        // — TERMINAL & KEY HANDLING —
         document.querySelectorAll('.key').forEach(btn => {
             if (!btn.hasAttribute('data-clickable')) return;
-
             btn.addEventListener('click', () => {
                 if (btn.id === 'btn-clear') content = '';
                 else if (btn.id === 'btn-backspace') content = content.slice(0, -1);
@@ -447,17 +456,11 @@
                     const k = btn.getAttribute('data-key');
                     if (k) content += k;
                 }
-
                 contentDiv.textContent = content;
                 contentDiv.scrollTop = contentDiv.scrollHeight;
-
-                // *** only check once practice has actually begun ***
-                if (practiceStarted) {
-                    setTimeout(checkPracticeAnswer, 0);
-                }
+                if (practiceStarted) setTimeout(checkPracticeAnswer, 0);
             });
         });
-        // — END PRACTICE LOGIC —
     </script>
 </body>
 
