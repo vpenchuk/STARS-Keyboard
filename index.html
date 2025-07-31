@@ -4,7 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <title>STARS Keyboard Practice with Hint</title>
+    <title>STARS Keyboard</title>
     <style>
         * {
             box-sizing: border-box;
@@ -438,6 +438,7 @@
 
         document.querySelectorAll('.key').forEach(btn => {
             if (!btn.hasAttribute('data-clickable')) return;
+
             btn.addEventListener('click', () => {
                 if (btn.id === 'btn-clear') content = '';
                 else if (btn.id === 'btn-backspace') content = content.slice(0, -1);
@@ -446,9 +447,14 @@
                     const k = btn.getAttribute('data-key');
                     if (k) content += k;
                 }
+
                 contentDiv.textContent = content;
                 contentDiv.scrollTop = contentDiv.scrollHeight;
-                setTimeout(checkPracticeAnswer, 0);
+
+                // *** only check once practice has actually begun ***
+                if (practiceStarted) {
+                    setTimeout(checkPracticeAnswer, 0);
+                }
             });
         });
         // — END PRACTICE LOGIC —
