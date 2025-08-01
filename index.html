@@ -147,6 +147,9 @@
         <button id="btn-practice">Start Practice</button>
         <div id="practice-prompt">Press “Start Practice” to begin</div>
         <div id="hint-text"></div>
+        <div id="completion-counter" style="margin-left:auto; color:#fff;">
+            Completed: 0
+        </div>
     </div>
 
     <!-- TERMINAL -->
@@ -400,7 +403,9 @@
         let startTime = 0;
         let practiceStarted = false;
         let showHints = false;
-        const practiceTimes = [];
+        const practiceTimes = []; let completionCount = 0;
+        const counterEl = document.getElementById('completion-counter');
+
 
         const btnPractice = document.getElementById('btn-practice');
         const promptEl = document.getElementById('practice-prompt');
@@ -423,6 +428,10 @@
 
         function checkPracticeAnswer() {
             if (content.trim() === currentAnswer) {
+                // bump counter
+                completionCount++;
+                counterEl.textContent = `Completed: ${completionCount}`;
+
                 const elapsed = Date.now() - startTime;
                 practiceTimes.push({ code: currentAnswer, timeMs: elapsed });
                 promptEl.textContent = `✅ Correct! Time: ${elapsed} ms`;
