@@ -405,6 +405,7 @@
         let showHints = false;
         const practiceTimes = []; let completionCount = 0;
         const counterEl = document.getElementById('completion-counter');
+        let askByCode = false;  // track whether we prompted with the code or the description
 
 
         const btnPractice = document.getElementById('btn-practice');
@@ -418,13 +419,25 @@
                 Math.floor(Math.random() * practiceList.length)
             ];
             currentAnswer = code;
-            promptEl.textContent = 'Type → ' + (Math.random() < 0.5 ? code : desc);
-            // respect whether hints are on
-            hintEl.textContent = showHints ? currentAnswer : '';
+
+            // decide whether to prompt by code or by description
+            askByCode = Math.random() < 0.5;
+            const promptValue = askByCode ? code : desc;
+            promptEl.textContent = 'Type → ' + promptValue;
+
+            // update hint: if hints on, and we prompted with the code,
+            // show both code AND full name; otherwise just show the code
+            if (showHints) {
+                hintEl.textContent = askByCode ? `${code} – ${desc}` : code;
+            } else {
+                hintEl.textContent = '';
+            }
+
             content = '';
             contentDiv.textContent = '';
             startTime = Date.now();
         }
+
 
         function checkPracticeAnswer() {
             if (content.trim() === currentAnswer) {
