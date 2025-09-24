@@ -1,0 +1,263 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: calc(var(--vh, 1vh) * 100);
+    width: 100vw;
+    overflow: hidden;
+    font-family: sans-serif;
+    background: #999;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Viewport height handling for mobile */
+:root {
+    --vh: 1vh;
+}
+
+/* Entry Controls */
+#entry-controls {
+    display: flex;
+    align-items: center;
+    gap: 1em;
+    padding: 8px;
+    background: #444;
+    color: #fff;
+    font-family: monospace;
+    padding-top: 12px;
+    flex-wrap: wrap;
+}
+
+#entry-prompt {
+    font-size: 1.2em;
+    flex: 1;
+    min-width: 200px;
+}
+
+#hint-text {
+    font-size: 1em;
+    color: #ff0;
+    min-width: 6em;
+}
+
+#completion-counter {
+    color: #fff;
+    font-size: 1em;
+}
+
+#connection-status {
+    font-size: 0.9em;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+}
+
+#connection-status.connected {
+    background: #228B22;
+    color: #fff;
+}
+
+#connection-status.disconnected {
+    background: #B22222;
+    color: #fff;
+}
+
+#connection-status.connecting {
+    background: #FFA500;
+    color: #000;
+}
+
+/* Terminal */
+.terminal {
+    font-family: monospace;
+    font-size: clamp(14px, 1.4vw, 20px);
+    line-height: 1.2em;
+    background: #000;
+    color: #0f0;
+    padding: 10px;
+    border-radius: 0 0 5px 5px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+}
+
+.term-content {
+    height: calc(1.2em * 5);
+    line-height: 1.2em;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    flex: 1;
+    margin-bottom: 8px;
+}
+
+.entry-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.send-btn, .clear-btn {
+    font-family: monospace;
+    font-size: 0.9em;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.send-btn {
+    background: #228B22;
+    color: #fff;
+}
+
+.send-btn:disabled {
+    background: #555;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.send-btn:hover:not(:disabled) {
+    background: #32CD32;
+}
+
+.clear-btn {
+    background: #B22222;
+    color: #fff;
+}
+
+.clear-btn:hover {
+    background: #DC143C;
+}
+
+/* Keyboard Layout */
+.keyboard {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    margin: clamp(4px, 1vw, 12px);
+    gap: clamp(2px, 0.6vw, 6px);
+}
+
+.key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    font-size: clamp(14px, 2vw, 24px);
+    padding: .3em;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.key[data-key="*"] {
+    font-size: clamp(24px, 4vw, 50px);
+}
+
+.key:disabled {
+    opacity: .3;
+    filter: grayscale(100%) brightness(80%);
+    cursor: not-allowed;
+    border: 1px dashed rgba(0, 0, 0, 0.3);
+}
+
+.key.active {
+    transform: scale(0.95);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.key.flash {
+    animation: keyFlash 0.2s ease;
+}
+
+@keyframes keyFlash {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+    100% { transform: scale(1); }
+}
+
+.no-emoji {
+    font-family: monospace !important;
+    font-variant-ligatures: none;
+    font-feature-settings: "liga" 0;
+    font-size: 1.5em;
+}
+
+/* Key Colors */
+.yellow {
+    background: #FFD700;
+    color: #000;
+}
+
+.yellow:hover:not(:disabled) {
+    background: #FFF700;
+}
+
+.green {
+    background: #228B22;
+    color: #fff;
+}
+
+.green:hover:not(:disabled) {
+    background: #32CD32;
+}
+
+.red {
+    background: #B22222;
+    color: #fff;
+}
+
+.red:hover:not(:disabled) {
+    background: #DC143C;
+}
+
+.blue {
+    background: #1E90FF;
+    color: #fff;
+}
+
+.blue:hover:not(:disabled) {
+    background: #4169E1;
+}
+
+/* Letter keys maintain yellow styling - removed override */
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #entry-controls {
+        flex-direction: column;
+        gap: 0.5em;
+        align-items: stretch;
+    }
+    
+    #entry-prompt {
+        text-align: center;
+    }
+    
+    .terminal {
+        min-height: 80px;
+    }
+    
+    .term-content {
+        height: calc(1.2em * 3);
+    }
+}
+
+/* Viewport height script */
+@media (max-width: 768px) {
+    html, body {
+        height: calc(var(--vh, 1vh) * 100);
+    }
+}

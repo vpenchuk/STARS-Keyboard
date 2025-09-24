@@ -4,9 +4,272 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
     <title>STARS Keyboard Simulator</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
+        html,
+        body {
+            height: calc(var(--vh, 1vh) * 100);
+            width: 100vw;
+            overflow: hidden;
+            font-family: sans-serif;
+            background: #999;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Viewport height handling for mobile */
+        :root {
+            --vh: 1vh;
+        }
+
+        /* Entry Controls */
+        #entry-controls {
+            display: flex;
+            align-items: center;
+            gap: 1em;
+            padding: 8px;
+            background: #444;
+            color: #fff;
+            font-family: monospace;
+            padding-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        #entry-prompt {
+            font-size: 1.2em;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        #hint-text {
+            font-size: 1em;
+            color: #ff0;
+            min-width: 6em;
+        }
+
+        #completion-counter {
+            color: #fff;
+            font-size: 1em;
+        }
+
+        #connection-status {
+            font-size: 0.9em;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        #connection-status.connected {
+            background: #228B22;
+            color: #fff;
+        }
+
+        #connection-status.disconnected {
+            background: #B22222;
+            color: #fff;
+        }
+
+        #connection-status.connecting {
+            background: #FFA500;
+            color: #000;
+        }
+
+        /* Terminal */
+        .terminal {
+            font-family: monospace;
+            font-size: clamp(14px, 1.4vw, 20px);
+            line-height: 1.2em;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 0 0 5px 5px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 120px;
+        }
+
+        .term-content {
+            height: calc(1.2em * 5);
+            line-height: 1.2em;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            flex: 1;
+            margin-bottom: 8px;
+        }
+
+        .entry-controls {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .send-btn, .clear-btn {
+            font-family: monospace;
+            font-size: 0.9em;
+            padding: 4px 8px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .send-btn {
+            background: #228B22;
+            color: #fff;
+        }
+
+        .send-btn:disabled {
+            background: #555;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: #32CD32;
+        }
+
+        .clear-btn {
+            background: #B22222;
+            color: #fff;
+        }
+
+        .clear-btn:hover {
+            background: #DC143C;
+        }
+
+        /* Keyboard Layout */
+        .keyboard {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            margin: clamp(4px, 1vw, 12px);
+            gap: clamp(2px, 0.6vw, 6px);
+        }
+
+        .key {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            font-size: clamp(14px, 2vw, 24px);
+            padding: .3em;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+
+        .key[data-key="*"] {
+            font-size: clamp(24px, 4vw, 50px);
+        }
+
+        .key:disabled {
+            opacity: .3;
+            filter: grayscale(100%) brightness(80%);
+            cursor: not-allowed;
+            border: 1px dashed rgba(0, 0, 0, 0.3);
+        }
+
+        .key.active {
+            transform: scale(0.95);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .key.flash {
+            animation: keyFlash 0.2s ease;
+        }
+
+        @keyframes keyFlash {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+            100% { transform: scale(1); }
+        }
+
+        .no-emoji {
+            font-family: monospace !important;
+            font-variant-ligatures: none;
+            font-feature-settings: "liga" 0;
+            font-size: 1.5em;
+        }
+
+        /* Key Colors */
+        .yellow {
+            background: #FFD700;
+            color: #000;
+        }
+
+        .yellow:hover:not(:disabled) {
+            background: #FFF700;
+        }
+
+        .green {
+            background: #228B22;
+            color: #fff;
+        }
+
+        .green:hover:not(:disabled) {
+            background: #32CD32;
+        }
+
+        .red {
+            background: #B22222;
+            color: #fff;
+        }
+
+        .red:hover:not(:disabled) {
+            background: #DC143C;
+        }
+
+        .blue {
+            background: #1E90FF;
+            color: #fff;
+        }
+
+        .blue:hover:not(:disabled) {
+            background: #4169E1;
+        }
+
+        /* Message styling */
+        .success-message { color: #32CD32 !important; }
+        .error-message { color: #FF6B6B !important; }
+        .info-message { color: #4ECDC4 !important; }
+        .key.highlighted { 
+            box-shadow: 0 0 10px #FFD700, inset 0 0 10px rgba(255, 215, 0, 0.3) !important;
+            border: 2px solid #FFD700 !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #entry-controls {
+                flex-direction: column;
+                gap: 0.5em;
+                align-items: stretch;
+            }
+            
+            #entry-prompt {
+                text-align: center;
+            }
+            
+            .terminal {
+                min-height: 80px;
+            }
+            
+            .term-content {
+                height: calc(1.2em * 3);
+            }
+        }
+    </style>
+</head>
 <body>
     <!-- Flight Plan Entry Controls -->
     <div id="entry-controls">
@@ -24,6 +287,9 @@
     <!-- Terminal Display -->
     <div class="terminal">
         <div id="term-content" class="term-content"></div>
+        <div class="entry-controls">
+            <button id="btn-clear-entry" class="clear-btn">CLEAR ENTRY</button>
+        </div>
     </div>
 
     <!-- STARS Keyboard Layout -->
@@ -99,40 +365,36 @@
         <button class="key blue" data-key="0" data-clickable data-qwerty="0" style="grid-column:8/11">0</button>
     </div>
 
-    
-    <!-- Combined JavaScript -->
     <script>
+        // Viewport height setup
+        function setViewportHeight() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        setViewportHeight();
+        window.addEventListener('resize', setViewportHeight);
+        window.addEventListener('orientationchange', setViewportHeight);
+
         // Application state
         let content = '';
         let isConnected = false;
         let entriesSent = 0;
-        
+        let mode = 'flightplan';
+
         // DOM elements
         const elements = {
             termContent: document.getElementById('term-content'),
             enterBtn: document.getElementById('btn-enter'),
+            clearBtn: document.getElementById('btn-clear-entry'),
+            modeBtn: document.getElementById('btn-mode'),
             promptEl: document.getElementById('entry-prompt'),
+            hintEl: document.getElementById('hint-text'),
             entryCountEl: document.getElementById('entry-count'),
             connectionStatusEl: document.getElementById('connection-status')
         };
-        
+
         // Key button mapping
         const keyButtons = new Map();
-        
-        // Initialize when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            // Cache DOM elements
-            elements.termContent = document.getElementById('term-content');
-            elements.enterBtn = document.getElementById('btn-enter');
-            elements.promptEl = document.getElementById('entry-prompt');
-            elements.entryCountEl = document.getElementById('entry-count');
-            elements.connectionStatusEl = document.getElementById('connection-status');
-            
-            initKeyboard();
-            setupPhysicalKeyboard();
-            checkConnection();
-            setInterval(checkConnection, 10000);
-        });
         
         // Initialize keyboard
         function initKeyboard() {
@@ -155,17 +417,12 @@
             });
 
             // Setup special buttons
-            const clearBtn = document.getElementById('btn-clear');
-            const backspaceBtn = document.getElementById('btn-backspace');
-            const spaceBtn = document.getElementById('btn-space');
-            const enterBtn = document.getElementById('btn-enter');
-
-            if (clearBtn) keyButtons.set('clear', clearBtn);
-            if (backspaceBtn) keyButtons.set('backspace', backspaceBtn);
-            if (spaceBtn) keyButtons.set('space', spaceBtn);
-            if (enterBtn) keyButtons.set('enter', enterBtn);
+            keyButtons.set('clear', document.getElementById('btn-clear'));
+            keyButtons.set('backspace', document.getElementById('btn-backspace'));
+            keyButtons.set('space', document.getElementById('btn-space'));
+            keyButtons.set('enter', document.getElementById('btn-enter'));
         }
-        
+
         // Handle key press
         function handleKeyPress(button) {
             let key = null;
@@ -184,7 +441,6 @@
 
             if (key) {
                 flashKey(button);
-                
                 if (key === 'ENTER') {
                     sendToFDIO();
                 } else {
@@ -192,7 +448,7 @@
                 }
             }
         }
-        
+
         // Process key input
         function processKeyInput(key) {
             switch (key) {
@@ -209,11 +465,11 @@
                     content += key;
                     break;
             }
-            
+
             updateDisplay();
             updateEnterButton();
         }
-        
+
         // Flash key for visual feedback
         function flashKey(button) {
             if (!button) return;
@@ -222,98 +478,89 @@
                 button.classList.remove('flash');
             }, 200);
         }
-        
+
         // Update terminal display
         function updateDisplay() {
-            if (elements.termContent) {
-                elements.termContent.textContent = content;
-                elements.termContent.scrollTop = elements.termContent.scrollHeight;
+            elements.termContent.textContent = content;
+            elements.termContent.scrollTop = elements.termContent.scrollHeight;
+        }
+
+        // Handle physical keyboard
+        document.addEventListener('keydown', (e) => {
+            let starsKey = null;
+            let button = null;
+
+            // Handle special key combinations
+            if (e.key === '8' && e.shiftKey) {
+                starsKey = '*';
+                button = keyButtons.get('*');
+            } else if (e.key === '=' && e.shiftKey) {
+                starsKey = '+';
+                button = keyButtons.get('+');
+            } else if (e.key === '6' && e.shiftKey) {
+                starsKey = '^';
+                button = keyButtons.get('^');
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                starsKey = 'SPACE';
+                button = keyButtons.get('space');
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                starsKey = 'BACKSPACE';
+                button = keyButtons.get('backspace');
+            } else if (e.key === 'Delete') {
+                e.preventDefault();
+                starsKey = 'CLEAR';
+                button = keyButtons.get('clear');
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                starsKey = 'ENTER';
+                button = keyButtons.get('enter');
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                starsKey = 'CLEAR';
+                button = keyButtons.get('clear');
+            } else if (/^[a-zA-Z0-9]$/.test(e.key)) {
+                e.preventDefault();
+                const normalizedKey = e.key.toUpperCase();
+                starsKey = normalizedKey;
+                button = keyButtons.get(normalizedKey) || keyButtons.get(e.key.toLowerCase());
             }
-        }
-        
-        // Setup physical keyboard
-        function setupPhysicalKeyboard() {
-            document.addEventListener('keydown', (e) => {
-                let starsKey = null;
-                let button = null;
 
-                // Handle special key combinations
-                if (e.key === '8' && e.shiftKey) {
-                    starsKey = '*';
-                    button = keyButtons.get('*');
-                } else if (e.key === '=' && e.shiftKey) {
-                    starsKey = '+';
-                    button = keyButtons.get('+');
-                } else if (e.key === '6' && e.shiftKey) {
-                    starsKey = '^';
-                    button = keyButtons.get('^');
-                } else if (e.key === ' ') {
-                    e.preventDefault();
-                    starsKey = 'SPACE';
-                    button = keyButtons.get('space');
-                } else if (e.key === 'Backspace') {
-                    e.preventDefault();
-                    starsKey = 'BACKSPACE';
-                    button = keyButtons.get('backspace');
-                } else if (e.key === 'Delete') {
-                    e.preventDefault();
-                    starsKey = 'CLEAR';
-                    button = keyButtons.get('clear');
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    starsKey = 'ENTER';
-                    button = keyButtons.get('enter');
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    starsKey = 'CLEAR';
-                    button = keyButtons.get('clear');
-                } else if (/^[a-zA-Z0-9]$/.test(e.key)) {
-                    e.preventDefault();
-                    const normalizedKey = e.key.toUpperCase();
-                    starsKey = normalizedKey;
-                    button = keyButtons.get(normalizedKey) || keyButtons.get(e.key.toLowerCase());
+            if (button && starsKey) {
+                flashKey(button);
+                if (starsKey === 'ENTER') {
+                    sendToFDIO();
+                } else if (starsKey === 'CLEAR') {
+                    clearEntry();
+                } else {
+                    processKeyInput(starsKey);
                 }
+            }
+        });
 
-                if (button && starsKey) {
-                    flashKey(button);
-                    
-                    if (starsKey === 'ENTER') {
-                        sendToFDIO();
-                    } else if (starsKey === 'CLEAR') {
-                        clearEntry();
-                    } else {
-                        processKeyInput(starsKey);
-                    }
-                }
-            });
-        }
-        
         // FDIO communication
         async function checkConnection() {
             try {
-                const response = await fetch('http://localhost:3001/health');
+                const response = await fetch('http://localhost:3001/health', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
                 if (response.ok) {
-                    if (!isConnected) {
-                        console.log('🔗 FDIO Connected');
-                    }
                     isConnected = true;
                     updateConnectionStatus('connected');
-                } else {
-                    throw new Error('Server error');
+                    return true;
                 }
             } catch (error) {
-                if (isConnected) {
-                    console.log('⚠️ FDIO Disconnected');
-                }
                 isConnected = false;
                 updateConnectionStatus('disconnected');
+                return false;
             }
         }
-        
+
         async function sendToFDIO() {
             const message = content.split('\n').join(' ').replace(/\s+/g, ' ').trim();
-            
-            console.log('📡 Sending to FDIO:', message);
             
             if (!message) {
                 showMessage('No entry to send', 'error');
@@ -326,6 +573,7 @@
             }
 
             try {
+                // Disable ENTER button during send
                 elements.enterBtn.disabled = true;
                 elements.enterBtn.textContent = 'SENDING...';
                 
@@ -344,19 +592,16 @@
                     const fp = data.flightPlan;
                     const info = data.starsInfo;
                     
-                    console.log('✅ FDIO Success:', `${info.type} ${info.rule} - ${fp.aircraftID} (${fp.beaconCode})`);
                     showMessage(`✅ ${info.type} ${info.rule} flight plan created: ${fp.aircraftID} (${fp.beaconCode})`, 'success');
                     
                     // Clear entry after successful send
                     content = '';
                     updateDisplay();
                 } else {
-                    console.error('❌ FDIO Error:', data.error);
                     showMessage(`❌ Error: ${data.error}`, 'error');
                 }
                 
             } catch (error) {
-                console.error('❌ Network Error:', error.message);
                 showMessage(`❌ Error: ${error.message}`, 'error');
             } finally {
                 elements.enterBtn.disabled = false;
@@ -364,32 +609,26 @@
                 updateEnterButton();
             }
         }
-        
+
         function clearEntry() {
             content = '';
             updateDisplay();
             updateEnterButton();
             showMessage('Entry cleared', 'info');
         }
-        
+
         function updateConnectionStatus(status) {
-            if (elements.connectionStatusEl) {
-                elements.connectionStatusEl.textContent = status === 'connected' ? 'FDIO: Connected' : 'FDIO: Disconnected';
-                elements.connectionStatusEl.classList.remove('connected', 'disconnected');
-                elements.connectionStatusEl.classList.add(status);
-            }
+            elements.connectionStatusEl.textContent = status === 'connected' ? 'FDIO: Connected' : 'FDIO: Disconnected';
+            elements.connectionStatusEl.classList.remove('connected', 'disconnected', 'connecting');
+            elements.connectionStatusEl.classList.add(status);
         }
-        
+
         function updateEnterButton() {
             const hasContent = content.trim().length > 0;
-            if (elements.enterBtn) {
-                elements.enterBtn.disabled = !hasContent || !isConnected;
-            }
+            elements.enterBtn.disabled = !hasContent || !isConnected;
         }
-        
+
         function showMessage(message, type = 'info', duration = 3000) {
-            if (!elements.promptEl) return;
-            
             const originalText = elements.promptEl.textContent;
             
             elements.promptEl.textContent = message;
@@ -400,7 +639,31 @@
                 elements.promptEl.className = '';
             }, duration);
         }
+
+        // Event listeners
+        elements.clearBtn.addEventListener('click', clearEntry);
+        elements.modeBtn.addEventListener('click', () => {
+            if (mode === 'flightplan') {
+                mode = 'practice';
+                elements.modeBtn.textContent = 'Flight Plan Mode';
+                elements.promptEl.textContent = 'Practice Mode - Enter flight plans for training';
+            } else {
+                mode = 'flightplan';
+                elements.modeBtn.textContent = 'Practice Mode';
+                elements.promptEl.textContent = 'Ready for Flight Plan Entry';
+            }
+        });
+
+        // Initialize
+        initKeyboard();
+        updateEnterButton();
+        updateConnectionStatus('disconnected');
+
+        // Check connection periodically
+        checkConnection();
+        setInterval(checkConnection, 10000);
+
+        console.log('🚀 STARS Keyboard Simulator (Standalone) initialized');
     </script>
 </body>
-
 </html>
