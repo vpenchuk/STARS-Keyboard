@@ -11,6 +11,7 @@
     <!-- Flight Plan Entry Controls -->
     <div id="entry-controls">
         <button id="btn-mode">Flight Plan Mode</button>
+        <button id="btn-mini-game" class="mini-game-toggle">🎯 Mini-Game</button>
         <div id="entry-prompt">Ready for Flight Plan Entry</div>
         <div id="hint-text"></div>
         <div id="completion-counter">
@@ -99,7 +100,60 @@
         <button class="key blue" data-key="0" data-clickable data-qwerty="0" style="grid-column:8/11">0</button>
     </div>
 
-    
+    <!-- Mini-Game Panel -->
+    <div id="mini-game-panel" class="mini-game-panel" style="display: none;">
+        <div class="game-header">
+            <h3>🎯 ATC Training Mini-Game</h3>
+            <div class="game-status">
+                <span id="timer-display" class="timer">00:00</span>
+                <span id="score-display" class="score">Score: 0</span>
+            </div>
+        </div>
+        
+        <div class="game-content">
+            <div class="request-queue-container">
+                <h4>📻 Active Pilot Requests</h4>
+                <div id="request-queue" class="request-queue">
+                    <div class="queue-empty">Click "Start Training" to begin</div>
+                </div>
+            </div>
+            
+            <div class="performance-panel">
+                <h4>📊 Performance</h4>
+                <div id="performance-stats">
+                    <div class="stat">
+                        <span class="stat-label">Response Time:</span>
+                        <span class="stat-value" id="avg-response-time">--</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Accuracy:</span>
+                        <span class="stat-value" id="accuracy-score">--%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Concurrent:</span>
+                        <span class="stat-value" id="concurrent-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-controls">
+            <button id="start-training" class="btn btn-primary">▶️ Start Training</button>
+            <button id="test-scenario" class="btn btn-warning">🧪 Test Scenario</button>
+            <button id="toggle-game" class="btn btn-secondary">Hide Mini-Game</button>
+        </div>
+        
+        <div class="game-hints">
+            <h4>💡 Training Tips</h4>
+            <ul>
+                <li>Enter FDIO data as: <strong>Callsign → Aircraft Type → Destination/1A</strong></li>
+                <li>Use SPACE to separate fields, ENTER to submit</li>
+                <li>Local VFR: Use last 3 characters (N4480R → 80R)</li>
+                <li>Local IFR: Use N + last 3 (N4480R → N80R)</li>
+            </ul>
+        </div>
+    </div>
+
     <!-- Combined JavaScript -->
     <script>
         // Application state
@@ -320,6 +374,32 @@
                 return;
             }
 
+            // Mini-game validation check
+            if (miniGameActive && window.currentScenario) {
+                const entryData = parseFdioEntry(message);
+                const validation = validateScenarioEntry(entryData);
+                if (validation) {
+                    displayValidationResults(validation);
+                    updateGameStats(validation);
+                    
+                    // Clear entry after validation
+                    content = '';
+                    updateDisplay();
+                    
+                    // Schedule next scenario or clear
+                    setTimeout(() => {
+                        clearCurrentScenario();
+                        const startBtn = document.getElementById('start-training');
+                        if (startBtn && startBtn.innerHTML.includes('Running')) {
+                            // Auto-load next scenario in training mode
+                            setTimeout(() => loadTestScenario(), 2000);
+                        }
+                    }, 3000);
+                    
+                    return; // Skip FDIO send in mini-game mode
+                }
+            }
+
             if (!isConnected) {
                 showMessage('FDIO not connected', 'error');
                 return;
@@ -365,6 +445,252 @@
             }
         }
         
+        function parseFdioEntry(fdioText) {
+            // Parse FDIO text into components for validation
+            const parts = fdioText.trim().split(/\s+/);
+            const parsed = {
+                callsign: '',
+                aircraft: '',
+                destination: '',
+                squawk: '',
+                remarks: ''
+            };
+            
+            // Basic parsing - this matches common FDIO formats
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i].toUpperCase();
+                
+                // Callsign detection (contains N or numbers)
+                if (!parsed.callsign && (/^N?\d+[A-Z]*$/.test(part) || /^[A-Z]+\d+[A-Z]*$/.test(part))) {
+                    parsed.callsign = part;
+                }
+                // Aircraft type detection (common patterns)
+                else if (!parsed.aircraft && /^(C\d{3}|PA\d{2}|BE\d{2}|CHER|BONA)$/.test(part)) {
+                    parsed.aircraft = part;
+                }
+                // Destination detection (3-4 char airport codes or practice area)
+                else if (!parsed.destination && (/^[A-Z0-9]{2,4}$/.test(part) || /^(WPA|WEST|EAST|NORTH|SOUTH|1A)/.test(part))) {
+                    parsed.destination = part;
+                }
+                // Squawk code detection (4 digits)
+                else if (!parsed.squawk && /^\d{4}$/.test(part)) {
+                    parsed.squawk = part;
+                }
+                // Special remarks
+                else if (['+', 'VFR-ON-TOP', 'VOT', 'SVFR'].includes(part)) {
+                    parsed.remarks += part + ' ';
+                }
+            }
+            
+            return parsed;
+        }
+        
+        function displayValidationResults(validation) {
+            const feedbackEl = document.getElementById('validation-feedback');
+            if (!feedbackEl) return;
+            
+            const passColor = validation.passed ? '#28a745' : '#dc3545';
+            const passIcon = validation.passed ? '🎉' : '📝';
+            const passText = validation.passed ? 'PASSED' : 'NEEDS WORK';
+            
+            feedbackEl.innerHTML = `
+                <div style="background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; border: 1px solid ${passColor};">
+                    <div style="color: ${passColor}; font-weight: bold; margin-bottom: 8px;">
+                        ${passIcon} ${passText} - Score: ${validation.score}/100 (${validation.responseTime}s)
+                    </div>
+                    ${validation.feedback.map(fb => `<div style="margin: 2px 0; font-size: 0.9em;">${fb}</div>`).join('')}
+                </div>
+            `;
+            
+            // Clear timer
+            if (window.scenarioTimerInterval) {
+                clearInterval(window.scenarioTimerInterval);
+            }
+        }
+        
+        function updateGameStats(validation) {
+            // Update session stats
+            if (!window.gameStats) {
+                window.gameStats = {
+                    totalScenarios: 0,
+                    passedScenarios: 0,
+                    totalScore: 0,
+                    averageTime: 0,
+                    totalTime: 0
+                };
+            }
+            
+            const stats = window.gameStats;
+            stats.totalScenarios++;
+            if (validation.passed) stats.passedScenarios++;
+            stats.totalScore += validation.score;
+            stats.totalTime += validation.responseTime;
+            stats.averageTime = Math.round(stats.totalTime / stats.totalScenarios);
+            
+            // Update UI
+            const accuracy = Math.round((stats.passedScenarios / stats.totalScenarios) * 100);
+            const avgScore = Math.round(stats.totalScore / stats.totalScenarios);
+            
+            document.getElementById('accuracy-rate').textContent = `${accuracy}%`;
+            document.getElementById('avg-response').textContent = `${stats.averageTime}s`;
+            document.getElementById('scenarios-completed').textContent = stats.totalScenarios;
+            document.getElementById('current-score').textContent = avgScore;
+        }
+        
+        function clearCurrentScenario() {
+            window.currentScenario = null;
+            window.scenarioStartTime = null;
+            if (window.scenarioTimerInterval) {
+                clearInterval(window.scenarioTimerInterval);
+            }
+            
+            // Update concurrent count
+            document.getElementById('concurrent-count').textContent = '0';
+            
+            // Clear queue or show completion message
+            const requestQueue = document.getElementById('request-queue');
+            requestQueue.innerHTML = '<div class="queue-empty">✅ Scenario completed! Next scenario loading...</div>';
+        }
+        
+        // Voice generation integration
+        function generateVoiceRequest(scenario) {
+            if (!window.speechSynthesis) {
+                console.log('🔇 Speech synthesis not available');
+                return;
+            }
+            
+            // Stop any existing speech
+            window.speechSynthesis.cancel();
+            
+            // Create speech utterance
+            const utterance = new SpeechSynthesisUtterance(scenario.request);
+            
+            // Configure voice settings based on scenario type
+            const voiceConfig = getVoiceConfigForScenario(scenario);
+            utterance.rate = voiceConfig.rate;
+            utterance.pitch = voiceConfig.pitch;
+            utterance.volume = voiceConfig.volume;
+            
+            // Try to select appropriate voice
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                const voice = selectPilotVoice(voices, scenario);
+                if (voice) {
+                    utterance.voice = voice;
+                }
+            }
+            
+            // Add event handlers
+            utterance.onstart = () => {
+                console.log(`🎤 Playing voice request: ${scenario.callsign}`);
+                showMessage(`🎤 ${scenario.callsign} is speaking...`, 'info');
+                
+                // Visual indication of voice playing
+                const requestItem = document.querySelector('.active-scenario');
+                if (requestItem) {
+                    requestItem.style.border = '2px solid #28a745';
+                    requestItem.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.3)';
+                }
+            };
+            
+            utterance.onend = () => {
+                console.log(`✅ Voice request completed: ${scenario.callsign}`);
+                showMessage(`📻 Request complete - Enter your FDIO response`, 'success');
+                
+                // Remove visual indication
+                const requestItem = document.querySelector('.active-scenario');
+                if (requestItem) {
+                    requestItem.style.border = '1px solid #0064c8';
+                    requestItem.style.boxShadow = 'none';
+                }
+            };
+            
+            utterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event.error);
+                showMessage('Voice playback failed - reading text request', 'warning');
+            };
+            
+            // Play the speech
+            setTimeout(() => {
+                window.speechSynthesis.speak(utterance);
+            }, 500); // Small delay to ensure clarity
+        }
+        
+        function getVoiceConfigForScenario(scenario) {
+            // Different voice characteristics based on scenario type
+            const configs = {
+                'Local VFR Flight Following': {
+                    rate: 0.85,  // Slower, student pilot
+                    pitch: 1.0,
+                    volume: 0.8
+                },
+                'National VFR Flight Following': {
+                    rate: 1.0,   // Normal pace
+                    pitch: 0.9,
+                    volume: 0.8
+                },
+                'VFR-on-top Request': {
+                    rate: 1.1,   // Faster, experienced pilot
+                    pitch: 0.8,
+                    volume: 0.9
+                }
+            };
+            
+            return configs[scenario.type] || configs['National VFR Flight Following'];
+        }
+        
+        function selectPilotVoice(voices, scenario) {
+            // Try to find appropriate voice based on scenario
+            let preferredVoices = [];
+            
+            if (scenario.type === 'Local VFR Flight Following') {
+                // Student pilots - look for younger/less confident voices
+                preferredVoices = voices.filter(voice => 
+                    voice.name.includes('David') || 
+                    voice.name.includes('Daniel') ||
+                    voice.name.includes('Fred')
+                );
+            } else if (scenario.type === 'VFR-on-top Request') {
+                // Experienced pilots - look for confident voices
+                preferredVoices = voices.filter(voice => 
+                    voice.name.includes('Alex') || 
+                    voice.name.includes('Thomas') ||
+                    voice.name.includes('Ralph')
+                );
+            }
+            
+            // Fallback to any English voice
+            if (preferredVoices.length === 0) {
+                preferredVoices = voices.filter(voice => 
+                    voice.lang.startsWith('en')
+                );
+            }
+            
+            // Return random voice from preferred list
+            if (preferredVoices.length > 0) {
+                return preferredVoices[Math.floor(Math.random() * preferredVoices.length)];
+            }
+            
+            return null;
+        }
+        
+        // Initialize voices when page loads
+        function initializeVoices() {
+            if (window.speechSynthesis) {
+                // Load voices
+                const loadVoices = () => {
+                    const voices = window.speechSynthesis.getVoices();
+                    console.log(`🎤 Available voices: ${voices.length}`);
+                    voices.slice(0, 5).forEach(voice => {
+                        console.log(`  - ${voice.name} (${voice.lang})`);
+                    });
+                };
+                
+                loadVoices();
+                window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+            }
+        }
+        
         function clearEntry() {
             content = '';
             updateDisplay();
@@ -400,7 +726,420 @@
                 elements.promptEl.className = '';
             }, duration);
         }
+        
+        // Mini-Game functionality
+        let miniGameActive = false;
+        let activeRequests = new Map();
+        
+        // Initialize mini-game after DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initMiniGame();
+            initializeVoices();
+        });
+        
+        function initMiniGame() {
+            const miniGameBtn = document.getElementById('btn-mini-game');
+            const gamePanel = document.getElementById('mini-game-panel');
+            const startTrainingBtn = document.getElementById('start-training');
+            const testScenarioBtn = document.getElementById('test-scenario');
+            const toggleGameBtn = document.getElementById('toggle-game');
+            
+            // Toggle mini-game panel
+            miniGameBtn.addEventListener('click', () => {
+                toggleMiniGame();
+            });
+            
+            toggleGameBtn.addEventListener('click', () => {
+                toggleMiniGame();
+            });
+            
+            // Start training session
+            startTrainingBtn.addEventListener('click', () => {
+                startTrainingSession();
+            });
+            
+            // Test scenario
+            testScenarioBtn.addEventListener('click', () => {
+                loadTestScenario();
+            });
+        }
+        
+        function toggleMiniGame() {
+            const gamePanel = document.getElementById('mini-game-panel');
+            const miniGameBtn = document.getElementById('btn-mini-game');
+            
+            miniGameActive = !miniGameActive;
+            
+            if (miniGameActive) {
+                gamePanel.style.display = 'block';
+                miniGameBtn.textContent = '🎯 Mini-Game (ON)';
+                miniGameBtn.style.backgroundColor = '#28a745';
+                showMessage('Mini-game mode activated! 🎯', 'success');
+            } else {
+                gamePanel.style.display = 'none';
+                miniGameBtn.textContent = '🎯 Mini-Game';
+                miniGameBtn.style.backgroundColor = '';
+                showMessage('Normal mode restored', 'info');
+            }
+        }
+        
+        function startTrainingSession() {
+            showMessage('Training session starting! 🚀 (Full integration coming soon)', 'success');
+            
+            // Update UI
+            const startBtn = document.getElementById('start-training');
+            startBtn.style.backgroundColor = '#28a745';
+            startBtn.innerHTML = '⏸️ Running...';
+            
+            // Load first scenario after 2 seconds
+            setTimeout(() => {
+                loadTestScenario();
+            }, 2000);
+        }
+        
+        function loadTestScenario() {
+            const requestQueue = document.getElementById('request-queue');
+            const scenarios = [
+                {
+                    id: 'test-1',
+                    callsign: 'N4480R',
+                    request: 'Rochester Tower, Cessna 4480R request taxi with flight following to West Practice Area',
+                    expected: '80R C172 1A',
+                    type: 'Local VFR Flight Following',
+                    validation: {
+                        callsign: ['80R', 'N80R', '4480R', 'N4480R'],
+                        aircraft: ['C172', 'C152', 'C150'],
+                        destination: ['1A', 'WPA', 'WEST'],
+                        squawk: /^04\d{2}$/
+                    }
+                },
+                {
+                    id: 'test-2', 
+                    callsign: 'N493MA',
+                    request: 'Rochester Tower, Cherokee 493MA request flight following to LSE',
+                    expected: 'N493MA LSE PA28 1A',
+                    type: 'National VFR Flight Following',
+                    validation: {
+                        callsign: ['493MA', 'N493MA', '3MA'],
+                        aircraft: ['PA28', 'PA32', 'CHER'],
+                        destination: ['LSE', 'KLSE'],
+                        squawk: /^\d{4}$/
+                    }
+                },
+                {
+                    id: 'test-3',
+                    callsign: 'N711RB',
+                    request: 'Rochester Tower, Bonanza 711RB requesting VFR-on-top', 
+                    expected: 'N1RB BE35 1A +',
+                    type: 'VFR-on-top Request',
+                    validation: {
+                        callsign: ['1RB', 'N1RB', '711RB', 'N711RB'],
+                        aircraft: ['BE35', 'BE36', 'BONA'],
+                        destination: ['1A'],
+                        squawk: /^04\d{2}$/,
+                        special: ['+', 'VFR-ON-TOP', 'VOT']
+                    }
+                }
+            ];
+            
+            const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+            const timeElapsed = Math.floor(Math.random() * 30) + 5; // 5-35 seconds
+            
+            // Store current scenario for validation
+            window.currentScenario = scenario;
+            window.scenarioStartTime = Date.now();
+            
+            requestQueue.innerHTML = `
+                <div class="request-item active-scenario" data-request-id="${scenario.id}" style="background: rgba(0,100,200,0.2); border: 1px solid #0064c8; border-radius: 4px; padding: 12px; margin-bottom: 10px; cursor: pointer; position: relative;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span style="font-weight: bold; color: #00d4ff;">${scenario.callsign}</span>
+                        <span style="font-size: 0.9em; color: #aaa;" id="scenario-timer">${timeElapsed}s</span>
+                    </div>
+                    <div style="font-size: 0.9em; line-height: 1.3; margin-bottom: 5px;">${scenario.request}</div>
+                    <div style="font-size: 0.8em; color: #888; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 2px; font-family: monospace;">Expected: ${scenario.expected}</div>
+                    <div style="font-size: 0.7em; color: #666; margin-top: 4px; font-style: italic;">${scenario.type}</div>
+                    <div id="validation-feedback" style="margin-top: 8px; font-size: 0.8em;"></div>
+                </div>
+            `;
+            
+            // Update concurrent count
+            document.getElementById('concurrent-count').textContent = '1';
+            
+            showMessage(`📻 New pilot request: ${scenario.callsign} - Enter FDIO data and press Enter!`, 'info');
+            
+            // Start scenario timer
+            startScenarioTimer();
+            
+            // Generate and play voice request
+            generateVoiceRequest(scenario);
+            
+            // Play audio alert if available
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFUgAA');
+                audio.volume = 0.3;
+                audio.play().catch(() => {});
+            } catch (e) {}
+        }
+        
+        function startScenarioTimer() {
+            if (window.scenarioTimerInterval) {
+                clearInterval(window.scenarioTimerInterval);
+            }
+            
+            window.scenarioTimerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - window.scenarioStartTime) / 1000);
+                const timerEl = document.getElementById('scenario-timer');
+                if (timerEl) {
+                    timerEl.textContent = `${elapsed}s`;
+                    if (elapsed > 60) {
+                        timerEl.style.color = '#ff4444'; // Red after 1 minute
+                    } else if (elapsed > 30) {
+                        timerEl.style.color = '#ffaa00'; // Orange after 30 seconds
+                    }
+                }
+            }, 1000);
+        }
+        
+        function validateScenarioEntry(entryData) {
+            if (!window.currentScenario || !miniGameActive) {
+                return null;
+            }
+            
+            const scenario = window.currentScenario;
+            const validation = scenario.validation;
+            const feedback = [];
+            let score = 0;
+            let maxScore = 0;
+            
+            // Validate callsign
+            maxScore += 25;
+            const callsignMatch = validation.callsign.some(valid => 
+                entryData.callsign.toUpperCase().includes(valid.toUpperCase())
+            );
+            if (callsignMatch) {
+                score += 25;
+                feedback.push('✅ Callsign correct');
+            } else {
+                feedback.push(`❌ Callsign incorrect (expected one of: ${validation.callsign.join(', ')})`);
+            }
+            
+            // Validate aircraft type
+            maxScore += 25;
+            const aircraftMatch = validation.aircraft.some(valid => 
+                entryData.aircraft.toUpperCase().includes(valid.toUpperCase())
+            );
+            if (aircraftMatch) {
+                score += 25;
+                feedback.push('✅ Aircraft type correct');
+            } else {
+                feedback.push(`❌ Aircraft incorrect (expected: ${validation.aircraft.join(' or ')})`);
+            }
+            
+            // Validate destination
+            maxScore += 25;
+            const destMatch = validation.destination.some(valid => 
+                entryData.destination.toUpperCase().includes(valid.toUpperCase())
+            );
+            if (destMatch) {
+                score += 25;
+                feedback.push('✅ Destination correct');
+            } else {
+                feedback.push(`❌ Destination incorrect (expected: ${validation.destination.join(' or ')})`);
+            }
+            
+            // Validate squawk code
+            maxScore += 25;
+            if (validation.squawk && validation.squawk.test(entryData.squawk)) {
+                score += 25;
+                feedback.push('✅ Squawk code format correct');
+            } else {
+                feedback.push('❌ Squawk code format incorrect');
+            }
+            
+            // Special validation (VFR-on-top, etc.)
+            if (validation.special) {
+                const specialMatch = validation.special.some(valid => 
+                    entryData.remarks && entryData.remarks.toUpperCase().includes(valid.toUpperCase())
+                );
+                if (specialMatch) {
+                    feedback.push('✅ Special requirements noted');
+                } else {
+                    feedback.push(`⚠️  Missing special requirement: ${validation.special[0]}`);
+                }
+            }
+            
+            // Calculate response time bonus
+            const responseTime = (Date.now() - window.scenarioStartTime) / 1000;
+            let timeBonus = 0;
+            if (responseTime <= 15) {
+                timeBonus = 10;
+                feedback.push('🚀 Speed bonus: Under 15s!');
+            } else if (responseTime <= 30) {
+                timeBonus = 5;
+                feedback.push('⚡ Speed bonus: Under 30s');
+            }
+            
+            const finalScore = Math.round(((score / maxScore) * 100) + timeBonus);
+            
+            return {
+                score: finalScore,
+                maxScore: 100 + (timeBonus > 0 ? timeBonus : 0),
+                feedback,
+                responseTime: Math.round(responseTime),
+                passed: score >= (maxScore * 0.75) // 75% to pass
+            };
+        }
+        
     </script>
+    
+    <!-- Mini-Game CSS -->
+    <style>
+        .mini-game-panel {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #0f4c75;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #e8e8e8;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #0f4c75;
+        }
+        
+        .game-header h3 {
+            margin: 0;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0,212,255,0.3);
+        }
+        
+        .game-status {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .timer, .score {
+            background: rgba(0,0,0,0.4);
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid #0f4c75;
+        }
+        
+        .timer { color: #00ff88; }
+        .score { color: #ffaa00; }
+        
+        .game-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .request-queue {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .queue-empty {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .performance-panel {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #333;
+        }
+        
+        .stat:last-child { border-bottom: none; }
+        .stat-label { color: #ccc; }
+        .stat-value { color: #00ff88; font-weight: bold; }
+        
+        .game-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .btn-primary { background: #0064c8; color: white; }
+        .btn-primary:hover { background: #0078e8; }
+        .btn-secondary { background: #666; color: white; }
+        .btn-secondary:hover { background: #777; }
+        .btn-warning { background: #ff8800; color: white; }
+        .btn-warning:hover { background: #ff9900; }
+        
+        .game-hints {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        
+        .game-hints h4 { margin-top: 0; color: #00d4ff; }
+        .game-hints ul { margin: 0; padding-left: 20px; }
+        .game-hints li { margin-bottom: 5px; }
+        
+        .mini-game-toggle {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: 1px solid #0f4c75;
+            background: #1a1a2e;
+            color: #00d4ff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .mini-game-toggle:hover {
+            background: #0f4c75;
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            .game-content { grid-template-columns: 1fr; }
+            .game-controls { flex-wrap: wrap; }
+            .btn { flex: 1; min-width: 120px; }
+        }
+    </style>
 </body>
 
 </html>
